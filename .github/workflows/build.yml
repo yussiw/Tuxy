@@ -1,0 +1,57 @@
+name: Build Tuxy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Preparar ambiente
+        run: |
+          docker --version
+
+      - name: Construir ISO do Tuxy
+        run: |
+          docker run --privileged --rm \
+            -v "$GITHUB_WORKSPACE:/work" \
+            -w /work \
+            debian:trixie \
+            bash -c '
+              set -e
+
+              apt-get update
+
+              DEBIAN_FRONTEND=noninteractive apt-get install -y \
+                live-build \
+                debootstrap \
+                squashfs-tools \
+                xorriso \
+                isolinux \
+                syslinux-common \
+                systemd-sysv
+
+              chmod +x scripts/build.sh
+
+              bash scripts/build.sh
+            '
+
+      - name: Verificar ISO
+        run: |
+          ls -lh live-image-amd64.hybrid.iso
+          file live-image-amd64.hybrid.iso
+
+      - name: Publicar ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tuxy-0.1-amd64
+          path: live-image-amd64.hybrid.iso
+          if-no-files-found: error
+          retention-days: 14
