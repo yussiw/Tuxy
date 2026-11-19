@@ -1,0 +1,101 @@
+=== ./.github/workflows/build.yml
+name: Build Tuxy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Preparar ambiente
+        run: |
+          docker --version
+
+      - name: Construir ISO do Tuxy
+        run: |
+          docker run --privileged --rm \
+            -v "$GITHUB_WORKSPACE:/work" \
+            -w /work \
+            debian:trixie \
+            bash -c '
+              set -e
+
+              apt-get update
+
+              DEBIAN_FRONTEND=noninteractive apt-get install -y \
+                live-build \
+                debootstrap \
+                squashfs-tools \
+                xorriso \
+                isolinux \
+                syslinux-common \
+                systemd-sysv
+
+              chmod +x scripts/build.sh
+
+              bash scripts/build.sh
+            '
+
+      - name: Verificar ISO
+        run: |
+          ls -lh live-image-amd64.hybrid.iso
+          file live-image-amd64.hybrid.iso
+
+      - name: Publicar ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tuxy-0.1-amd64
+          path: live-image-amd64.hybrid.iso
+          if-no-files-found: error
+          retention-days: 14=== ./README.md
+# Tuxy
+an operating system made for test eba
+=== ./config/package-lists/tuxy.list.chroot
+live-boot
+live-config
+linux-image-amd64
+systemd-sysv
+
+xorg
+xfce4-session
+xfce4-panel
+xfdesktop4
+xfwm4
+xfce4-settings
+xfconf
+xfce4-terminal
+thunar
+
+lightdm
+lightdm-gtk-greeter
+dbus-x11
+
+network-manager
+sudo
+nano=== ./scripts/build.sh
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Construindo Tuxy 0.1..."
+
+lb config \
+  --distribution trixie \
+  --architectures amd64 \
+  --binary-images iso-hybrid \
+  --debian-installer none \
+  --archive-areas "main contrib non-free non-free-firmware" \
+  --bootappend-live "boot=live components hostname=tuxy"
+
+lb build
+
+echo "Tuxy foi compilado!"
+=== ./tudo.txt

@@ -1,0 +1,9 @@
+button-icon=/usr/share/icons/tuxy/orb.png
+button-single-row=false
+show-button-title=false
+launcher-show-name=true
+launcher-show-description=false
+view-mode=1
+position-search-alternate=true
+menu-width=480
+menu-height=520

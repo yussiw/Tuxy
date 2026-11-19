@@ -1,0 +1,5 @@
+#!/bin/sh
+sleep 3
+for p in $(xfconf-query -c xfce4-desktop -l | grep last-image); do
+  xfconf-query -c xfce4-desktop -p "$p" -s /usr/share/backgrounds/tuxy/wallpaper.png
+done
